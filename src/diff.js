@@ -36,7 +36,7 @@ function line(obj, prev, pad) {
 //~> complex items bail outright
 export function arrays(input, expect) {
 	let arr = diff.diffArrays(input, expect);
-	let i=0, j=0, k=0, tmp, val, char;
+	let i=0, j=0, k=0, tmp, val, char, isObj, str;
 	let out = LOG('··', '[');
 
 	for (; i < arr.length; i++) {
@@ -49,8 +49,13 @@ export function arrays(input, expect) {
 		}
 
 		for (j=0; j < tmp.value.length; j++) {
+			isObj = (tmp.value[j] && typeof tmp.value[j] === 'object');
 			val = JSON.stringify(tmp.value[j], null, 2).split(/\r?\n/g);
-			for (k=0; k < val.length; k++) out += LOG(char, '  ' + val[k] + (/^[{}]$/.test(val[k]) ? '' : ','));
+			for (k=0; k < val.length;) {
+				str = '  ' + val[k++] + (isObj ? '' : ',');
+				if (isObj && k === val.length && (j + 1) < tmp.value.length) str += ',';
+				out += LOG(char, str);
+			}
 		}
 	}
 
@@ -189,13 +194,12 @@ export function compare(input, expect) {
 		expect = JSON.stringify(expect, circular(), 2);
 	}
 
-	if (/\r?\n/.test(String(expect))) {
-		return lines(input, expect);
-	}
+	let isA = typeof input == 'string';
+	let isB = typeof expect == 'string';
 
-	if (typeof expect == 'string') {
-		return chars(input, expect);
-	}
+	if (isA && /\r?\n/.test(input)) return lines(input, ''+expect);
+	if (isB && /\r?\n/.test(expect)) return lines(''+input, expect);
+	if (isA && isB) return chars(input, expect);
 
 	return direct(input, expect);
 }

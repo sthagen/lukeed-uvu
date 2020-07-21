@@ -62,14 +62,125 @@ arrays('should print/bail on complex objects', () => {
 		'··[\n' +
 		'Actual:\n' +
 		'--··{\n' +
-		'--····"foo":·1,\n' +
-		'--··}\n' +
+		'--····"foo":·1\n' +
+		'--··},\n' +
 		'--··{\n' +
-		'--····"bar":·2,\n' +
+		'--····"bar":·2\n' +
 		'--··}\n' +
 		'Expected:\n' +
 		'++··{\n' +
-		'++····"foo":·1,\n' +
+		'++····"foo":·1\n' +
+		'++··}\n' +
+		'··]\n'
+	);
+
+	assert.is(
+		strip(
+			$.arrays(
+				[ [111], ['bbb'] ],
+				[ [333], ['xxx'] ],
+			)
+		),
+		'··[\n' +
+		'Actual:\n' +
+		'--··[\n' +
+		'--····111\n' +
+		'--··],\n' +
+		'--··[\n' +
+		'--····"bbb"\n' +
+		'--··]\n' +
+		'Expected:\n' +
+		'++··[\n' +
+		'++····333\n' +
+		'++··],\n' +
+		'++··[\n' +
+		'++····"xxx"\n' +
+		'++··]\n' +
+		'··]\n'
+	);
+
+	assert.is(
+		strip(
+			$.arrays(
+				[ [111, 222], ['aaa', 'bbb'] ],
+				[ [333, 444], ['aaa', 'xxx'] ],
+			)
+		),
+		'··[\n' +
+		'Actual:\n' +
+		'--··[\n' +
+		'--····111,\n' +
+		'--····222\n' +
+		'--··],\n' +
+		'--··[\n' +
+		'--····"aaa",\n' +
+		'--····"bbb"\n' +
+		'--··]\n' +
+		'Expected:\n' +
+		'++··[\n' +
+		'++····333,\n' +
+		'++····444\n' +
+		'++··],\n' +
+		'++··[\n' +
+		'++····"aaa",\n' +
+		'++····"xxx"\n' +
+		'++··]\n' +
+		'··]\n'
+	);
+
+	assert.is(
+		strip(
+			$.arrays(
+				[{
+					foobar: 123,
+					position: {
+						start: { line: 1, column: 1, offset: 0, index: 0 },
+						end: { line: 1, column: 8, offset: 7 }
+					}
+				}],
+				[{
+					foobar: 456,
+					position: {
+						start: { line: 2, column: 1, offset: 0, index: 0 },
+						end: { line: 9, column: 9, offset: 6 }
+					}
+				}]
+			)
+		),
+		'··[\n' +
+		'Actual:\n' +
+		'--··{\n' +
+		'--····"foobar":·123,\n' +
+		'--····"position":·{\n' +
+		'--······"start":·{\n' +
+		'--········"line":·1,\n' +
+		'--········"column":·1,\n' +
+		'--········"offset":·0,\n' +
+		'--········"index":·0\n' +
+		'--······},\n' +
+		'--······"end":·{\n' +
+		'--········"line":·1,\n' +
+		'--········"column":·8,\n' +
+		'--········"offset":·7\n' +
+		'--······}\n' +
+		'--····}\n' +
+		'--··}\n' +
+		'Expected:\n' +
+		'++··{\n' +
+		'++····"foobar":·456,\n' +
+		'++····"position":·{\n' +
+		'++······"start":·{\n' +
+		'++········"line":·2,\n' +
+		'++········"column":·1,\n' +
+		'++········"offset":·0,\n' +
+		'++········"index":·0\n' +
+		'++······},\n' +
+		'++······"end":·{\n' +
+		'++········"line":·9,\n' +
+		'++········"column":·9,\n' +
+		'++········"offset":·6\n' +
+		'++······}\n' +
+		'++····}\n' +
 		'++··}\n' +
 		'··]\n'
 	);
@@ -622,6 +733,100 @@ compare('should proxy `$.direct` for Boolean inputs', () => {
 		strip($.compare(true, false)),
 		'++false    (Expected)\n' +
 		'--true     (Actual)\n'
+	);
+});
+
+compare('should handle string against non-type mismatch', () => {
+	assert.snapshot(
+		strip($.compare('foobar', null)),
+		'++null    [object]  (Expected)\n' +
+		'--foobar  [string]  (Actual)\n'
+	);
+
+	assert.snapshot(
+		strip($.compare(null, 'foobar')),
+		'++foobar  [string]  (Expected)\n' +
+		'--null    [object]  (Actual)\n'
+	);
+
+	assert.snapshot(
+		strip($.compare('foobar', 123)),
+		'++123     [number]  (Expected)\n' +
+		'--foobar  [string]  (Actual)\n'
+	);
+
+	assert.snapshot(
+		strip($.compare(123, 'foobar')),
+		'++foobar  [string]  (Expected)\n' +
+		'--123     [number]  (Actual)\n'
+	);
+
+	assert.snapshot(
+		strip($.compare('foobar', undefined)),
+		'++undefined  [undefined]  (Expected)\n' +
+		'--foobar     [string]     (Actual)\n'
+	);
+
+	assert.snapshot(
+		strip($.compare(undefined, 'foobar')),
+		'++foobar     [string]     (Expected)\n' +
+		'--undefined  [undefined]  (Actual)\n'
+	);
+});
+
+compare('should handle multi-line string against non-type mismatch', () => {
+	assert.snapshot(
+		strip($.compare('foo\nbar', null)),
+		'Actual:\n' +
+		'--foo\n' +
+		'--bar\n' +
+		'Expected:\n' +
+		'++null\n'
+	);
+
+	assert.snapshot(
+		strip($.compare(null, 'foo\nbar')),
+		'Actual:\n' +
+		'--null\n' +
+		'Expected:\n' +
+		'++foo\n' +
+		'++bar\n'
+	);
+
+	assert.snapshot(
+		strip($.compare('foo\nbar', 123)),
+		'Actual:\n' +
+		'--foo\n' +
+		'--bar\n' +
+		'Expected:\n' +
+		'++123\n'
+	);
+
+	assert.snapshot(
+		strip($.compare(123, 'foo\nbar')),
+		'Actual:\n' +
+		'--123\n' +
+		'Expected:\n' +
+		'++foo\n' +
+		'++bar\n'
+	);
+
+	assert.snapshot(
+		strip($.compare('foo\nbar', undefined)),
+		'Actual:\n' +
+		'--foo\n' +
+		'--bar\n' +
+		'Expected:\n' +
+		'++undefined\n'
+	);
+
+	assert.snapshot(
+		strip($.compare(undefined, 'foo\nbar')),
+		'Actual:\n' +
+		'--undefined\n' +
+		'Expected:\n' +
+		'++foo\n' +
+		'++bar\n'
 	);
 });
 
