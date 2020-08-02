@@ -2,27 +2,28 @@ type Arrayable<T> = T[] | T;
 type Promisable<T> = Promise<T> | T;
 
 declare namespace uvu {
-	type Callback = () => Promisable<any>;
+	type Callback<T> = (context: T) => Promisable<void>;
 
-	interface Hook {
-		(hook: Callback): void;
-		each(hook: Callback): void;
+	interface Hook<T> {
+		(hook: Callback<T>): void;
+		each(hook: Callback<T>): void;
 	}
 
-	interface Test {
-		(name: string, test: Callback): void;
-		only(name: string, test: Callback): void;
-		skip(name?: string, test?: Callback): void;
-		before: Hook;
-		after: Hook
+	interface Test<T> {
+		(name: string, test: Callback<T>): void;
+		only(name: string, test: Callback<T>): void;
+		skip(name?: string, test?: Callback<T>): void;
+		before: Hook<T>;
+		after: Hook<T>
 		run(): VoidFunction;
 	}
 }
 
 declare module 'uvu' {
-	export const test: uvu.Test;
-	export type Callback = uvu.Callback;
-	export function suite(title?: string): uvu.Test;
+	type Context = Record<string, any>;
+	export const test: uvu.Test<Context>;
+	export type Callback<T=Context> = uvu.Callback<T>;
+	export function suite<T=Context>(title?: string, suite?: T): uvu.Test<T>;
 	export function exec(bail?: boolean): Promise<void>;
 }
 
@@ -37,6 +38,7 @@ declare module 'uvu/assert' {
 	export function instance(actual: any, expects: any, msg?: Message): void;
 	export function snapshot(actual: string, expects: string, msg?: Message): void;
 	export function fixture(actual: string, expects: string, msg?: Message): void;
+	export function match(actual: string, expects: string | RegExp, msg?: Message): void;
 	export function throws(fn: Function, expects?: Message | RegExp | Function, msg?: Message): void;
 	export function not(actual: any, msg?: Message): void;
 	export function unreachable(msg?: Message): void;
@@ -52,6 +54,7 @@ declare module 'uvu/assert' {
 		function instance(actual: any, expects: any, msg?: Message): void;
 		function snapshot(actual: string, expects: string, msg?: Message): void;
 		function fixture(actual: string, expects: string, msg?: Message): void;
+		function match(actual: string, expects: string | RegExp, msg?: Message): void;
 		function throws(fn: Function, expects?: Message | RegExp | Function, msg?: Message): void;
 	}
 
