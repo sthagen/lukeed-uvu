@@ -50,7 +50,7 @@ export function arrays(input, expect) {
 
 		for (j=0; j < tmp.value.length; j++) {
 			isObj = (tmp.value[j] && typeof tmp.value[j] === 'object');
-			val = JSON.stringify(tmp.value[j], null, 2).split(/\r?\n/g);
+			val = stringify(tmp.value[j]).split(/\r?\n/g);
 			for (k=0; k < val.length;) {
 				str = '  ' + val[k++] + (isObj ? '' : ',');
 				if (isObj && k === val.length && (j + 1) < tmp.value.length) str += ',';
@@ -179,10 +179,16 @@ export function sort(input, expect) {
 export function circular() {
 	var cache = new Set;
 	return function print(key, val) {
+		if (val === void 0) return '[__VOID__]';
+		if (typeof val === 'number' && val !== val) return '[__NAN__]';
 		if (!val || typeof val !== 'object') return val;
 		if (cache.has(val)) return '[Circular]';
 		cache.add(val); return val;
 	}
+}
+
+export function stringify(input) {
+	return JSON.stringify(input, circular(), 2).replace(/"\[__NAN__\]"/g, 'NaN').replace(/"\[__VOID__\]"/g, 'undefined');
 }
 
 export function compare(input, expect) {
@@ -190,8 +196,8 @@ export function compare(input, expect) {
 	if (expect instanceof RegExp) return chars(''+input, ''+expect);
 
 	if (expect && typeof expect == 'object') {
-		input = JSON.stringify(sort(input, expect), circular(), 2);
-		expect = JSON.stringify(expect, circular(), 2);
+		input = stringify(sort(input, expect));
+		expect = stringify(expect);
 	}
 
 	let isA = typeof input == 'string';
