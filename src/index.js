@@ -10,7 +10,7 @@ const context = (state) => ({ tests:[], before:[], after:[], bEach:[], aEach:[],
 const milli = arr => (arr[0]*1e3 + arr[1]/1e6).toFixed(2) + 'ms';
 const hook = (ctx, key) => handler => ctx[key].push(handler);
 
-if (isNode = typeof process !== 'undefined') {
+if (isNode = typeof process < 'u' && typeof process.stdout < 'u') {
 	// globalThis polyfill; Node < 12
 	if (typeof globalThis !== 'object') {
 		Object.defineProperty(global, 'globalThis', {
@@ -24,7 +24,12 @@ if (isNode = typeof process !== 'undefined') {
 	// attach node-specific utils
 	write = x => process.stdout.write(x);
 	hrtime = (now = process.hrtime()) => () => milli(process.hrtime(now));
+} else if (typeof performance < 'u') {
+	hrtime = (now = performance.now()) => () => (performance.now() - now).toFixed(2) + 'ms';
 }
+
+globalThis.UVU_QUEUE = globalThis.UVU_QUEUE || [];
+isCLI || UVU_QUEUE.push([null]);
 
 const QUOTE = kleur.dim('"'), GUTTER = '\n        ';
 const FAIL = kleur.red('✘ '), PASS = kleur.gray('• ');
@@ -56,29 +61,8 @@ function format(name, err, suite = '') {
 	return str + '\n';
 }
 
-function toProxy(cache) {
-	return {
-		get(obj, key) {
-			let tmp = obj[key];
-			if (!tmp || typeof tmp !== 'object') return tmp;
-
-			let nxt = cache.get(tmp);
-			if (nxt) return nxt;
-
-			nxt = new Proxy(tmp, this);
-			cache.set(tmp, nxt);
-			return nxt;
-		},
-		set() {
-			write('\n' + kleur.yellow('[WARN]') + ' Cannot modify context within tests!\n');
-			return true;
-		}
-	}
-}
-
 async function runner(ctx, name) {
 	let { only, tests, before, after, bEach, aEach, state } = ctx;
-	let reader = Proxy.revocable(state, toProxy(new Map));
 	let hook, test, arr = only.length ? only : tests;
 	let num=0, errors='', total=arr.length;
 
@@ -87,9 +71,10 @@ async function runner(ctx, name) {
 		for (hook of before) await hook(state);
 
 		for (test of arr) {
+			state.__test__ = test.name;
 			try {
 				for (hook of bEach) await hook(state);
-				await test.handler(reader.proxy);
+				await test.handler(state);
 				for (hook of aEach) await hook(state);
 				write(PASS);
 				num++;
@@ -101,7 +86,7 @@ async function runner(ctx, name) {
 			}
 		}
 	} finally {
-		reader.revoke();
+		state.__test__ = '';
 		for (hook of after) await hook(state);
 		let msg = `  (${num} / ${total})\n`;
 		let skipped = (only.length ? tests.length : 0) + ctx.skips;
@@ -111,6 +96,8 @@ async function runner(ctx, name) {
 }
 
 function setup(ctx, name = '') {
+	ctx.state.__test__ = '';
+	ctx.state.__suite__ = name;
 	const test = into(ctx, 'tests');
 	test.before = hook(ctx, 'before');
 	test.before.each = hook(ctx, 'bEach');
@@ -122,13 +109,10 @@ function setup(ctx, name = '') {
 		let copy = { ...ctx };
 		let run = runner.bind(0, copy, name);
 		Object.assign(ctx, context(copy.state));
-		QUEUE[globalThis.UVU_INDEX || 0].push(run);
+		UVU_QUEUE[globalThis.UVU_INDEX || 0].push(run);
 	};
 	return test;
 }
-
-export const QUEUE = [];
-isCLI || QUEUE.push([null]);
 
 export const suite = (name = '', state = {}) => setup(context(state), name);
 export const test = suite();
@@ -137,7 +121,7 @@ export async function exec(bail) {
 	let timer = hrtime();
 	let done=0, total=0, skips=0, code=0;
 
-	for (let group of QUEUE) {
+	for (let group of UVU_QUEUE) {
 		if (total) write('\n');
 
 		let name = group.shift();
@@ -158,7 +142,7 @@ export async function exec(bail) {
 	write('\n  Skipped:   ' + (skips ? kleur.yellow(skips) : skips));
 	write('\n  Duration:  ' + timer() + '\n\n');
 
-	if (isNode) process.exit(code);
+	if (isNode) process.exitCode = code;
 }
 
 isCLI || Promise.resolve().then(exec);

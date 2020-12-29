@@ -1,5 +1,6 @@
 declare namespace uvu {
-	type Callback<T> = (context: T) => Promise<void> | void;
+	type Crumbs = { __suite__: string; __test__: string };
+	type Callback<T> = (context: T & Crumbs) => Promise<void> | void;
 
 	interface Hook<T> {
 		(hook: Callback<T>): void;
@@ -17,7 +18,10 @@ declare namespace uvu {
 }
 
 type Context = Record<string, any>;
-export const test: uvu.Test<Context>;
+
+export type Test<T=Context> = uvu.Test<T>;
 export type Callback<T=Context> = uvu.Callback<T>;
-export function suite<T=Context>(title?: string, suite?: T): uvu.Test<T>;
+
+export const test: uvu.Test<Context>;
+export function suite<T=Context>(title?: string, context?: T): uvu.Test<T>;
 export function exec(bail?: boolean): Promise<void>;

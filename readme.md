@@ -26,7 +26,7 @@
 
 ## Features
 
-* Super [lightweight](https://npm.anvaka.com/#!/view/2d/uvu)
+* Super [lightweight](https://npm.anvaka.com/#/view/2d/uvu)
 * Extremely [performant](#benchmarks)
 * Individually executable test files
 * Supports `async`/`await` tests
@@ -81,6 +81,8 @@ $ uvu -r esm tests
 # via `node` directly, for file isolation
 $ node -r esm tests/demo.js
 ```
+
+> **Note:** The `-r esm` is for legacy Node.js versions. [Learn More](/docs/esm.md)
 
 > [View the `uvu` CLI documentation](/docs/cli.md)
 
