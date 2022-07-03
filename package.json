@@ -1,6 +1,6 @@
 {
   "name": "uvu",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "repository": "lukeed/uvu",
   "description": "uvu is an extremely fast and lightweight test runner for Node.js and the browser",
   "module": "dist/index.mjs",
@@ -48,7 +48,6 @@
   ],
   "modes": {
     "diff": "src/diff.js",
-    "parse": "src/parse.js",
     "assert": "src/assert.js",
     "default": "src/index.js"
   },
